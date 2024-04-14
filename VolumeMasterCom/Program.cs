@@ -5,9 +5,9 @@ using YamlDotNet.Serialization;
 
 namespace VolumeMasterCom;
 
-internal class Program
+internal static class Program
 {
-    public static void Main(string[] Args)
+    public static void Main(string[] args)
     {
     }
 }
@@ -16,10 +16,10 @@ public class VolumeMasterCom
 {
     private readonly bool _doLog;
     private readonly ILogger<object> _logger;
-    private readonly SerialPort _port;
-    private List<int> _volume = new();
+    private readonly SerialPort? _port;
 
-    private List<int> SliderIndexesChanged;
+    private List<int>? _sliderIndexesChanged;
+    private List<int> _volume = new();
 
 
     public VolumeMasterCom(ILogger<object> logger)
@@ -30,7 +30,8 @@ public class VolumeMasterCom
         {
             _logger.LogInformation("Starting VolumeMasterCom");
             ConfigHelper();
-            _port = new SerialPort(Config.PortName, Config.BaudRate);
+            if (Config is null) return;
+            _port = new SerialPort(Config?.PortName, Config!.BaudRate);
             _port.Open();
             _port.DtrEnable = true;
             _port.RtsEnable = true;
@@ -44,7 +45,7 @@ public class VolumeMasterCom
         }
     }
 
-    public Config Config { get; private set; }
+    public Config? Config { get; private set; }
 
     public List<int> GetVolume()
     {
@@ -53,29 +54,29 @@ public class VolumeMasterCom
 
     public void RequestVolume()
     {
-        _port.WriteLine("getVolume");
+        _port?.WriteLine("getVolume");
     }
 
     private void portOnDataReceived(object sender, EventArgs e)
     {
         var receivedData = ((SerialPort)sender).ReadLine();
         //Split the received data into a list of integers
-        var newVolume = receivedData.Split(' ').Select(receivedDataPart => int.Parse(receivedDataPart)).ToList();
+        var newVolume = receivedData.Split(' ').Select(int.Parse).ToList();
 
         //if the volume list is empty, set it to the new volume
         //Should only happen once
         if (_volume.Count == 0)
         {
             _volume = newVolume;
-            VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexsCahnged = [] });
+            VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexesChanged = [] });
             return;
         }
 
         //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
         //Apply the new volume
-        SliderIndexesChanged = new List<int>();
+        _sliderIndexesChanged = new List<int>();
         SmoothVolume(newVolume);
-        VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexsCahnged = SliderIndexesChanged });
+        VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexesChanged = _sliderIndexesChanged });
 
 #if DEBUG
             //Print the volume for debugging
@@ -89,7 +90,7 @@ public class VolumeMasterCom
         for (var i = 0; i < volume.Count; i++)
         {
             if (_volume[i] == volume[i]) continue;
-            if (Math.Abs(volume[i] - _volume[i]) > Config.Smoothness)
+            if (Config != null && Math.Abs(volume[i] - _volume[i]) > Config.Smoothness)
             {
                 _logger.LogInformation(
                     $"Unsmoothed volume change would be {Math.Abs(volume[i] - _volume[i])} bits, smoothing to {Config.Smoothness} bits");
@@ -104,11 +105,11 @@ public class VolumeMasterCom
             }
 
             _volume[i] = volume[i];
-            SliderIndexesChanged.Add(i);
+            _sliderIndexesChanged?.Add(i);
         }
     }
 
-    public event EventHandler<VolumeChangedEventArgs> VolumeChanged;
+    public event EventHandler<VolumeChangedEventArgs>? VolumeChanged;
 
 
     private void ConfigHelper()
@@ -117,7 +118,29 @@ public class VolumeMasterCom
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             configPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
                          "/.config/VolumeMasterConfig";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            configPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
+                         "\\VolumeMaster\\config.yaml";
+            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
+                                  "\\VolumeMaster"))
+                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
+                                          "\\VolumeMaster");
+        }
+
+        _logger.LogError("Config path: " + configPath);
         try
+        {
+            CreatNewConfig();
+        }
+        catch (Exception e)
+        {
+            ReadExistingConfig(e);
+        }
+
+        return;
+
+        void CreatNewConfig()
         {
             if (!File.Exists(configPath))
             {
@@ -132,7 +155,8 @@ public class VolumeMasterCom
                 Config = yaml.Deserialize<Config>(File.ReadAllText(configPath));
             }
         }
-        catch (Exception e)
+
+        void ReadExistingConfig(Exception e)
         {
             if (!_doLog)
                 Console.WriteLine(e.Message);
@@ -149,21 +173,21 @@ public class VolumeMasterCom
 
     public class VolumeChangedEventArgs : EventArgs
     {
-        public List<int> SliderIndexsCahnged { get; set; }
+        public List<int>? SliderIndexesChanged { get; init; }
     }
 }
 
 public class Config
 {
-    public string PortName { get; set; } = "/dev/ttyACM0";
+    public string PortName { get; set; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "/dev/ttyACM0" : "COM3";
     public int BaudRate { get; set; } = 9600;
 
 
     //How much the volume can change per bit
     [YamlMember(Description =
-        "How much the volume can change per bit (if unchanged: approximately 5 ms)\nBetween 1 and, 1024\nDefault: 10 (lets you change the volume by approximately 200% per second)")]
-    public ushort Smoothness { get; set; } = 10;
+        "Between 1 and, 1024\n")]
+    public ushort Smoothness { get; set; } = 1000;
 
-    public List<List<string>> SliderApplicationPairs { get; set; } = new()
-        { new List<string> { "Firefox", "Chromium" }, new List<string> { "speech-dispatcher-dummy" } };
+    public List<List<string>> SliderApplicationPairs { get; set; } =
+        [["Firefox", "Chromium"], ["master"]];
 }
