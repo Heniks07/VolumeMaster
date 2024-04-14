@@ -6,8 +6,8 @@ supossed to controle. To see what each poti does there is a 8x8 LET matrix. What
 ## Features
 | Feature | Windows | Linux(PulseAudio) |
 | --- | --- | --- | 
-| Volume change for applications | <ul><li>[ ] coming soon</li></ul> | <ul><li>[x] </li></ul> |
-| Volume change for Devices/Sinks | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul> 
+| Volume change for applications | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul> |
+| Volume change for Devices/Sinks | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul> 
 | Preset | <ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 | LED matrix |<ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 |  |  |  | 
