@@ -15,20 +15,22 @@ internal static class Program
 public class VolumeMasterCom
 {
     private readonly bool _doLog;
-    private readonly ILogger<object> _logger;
+    private readonly ILogger<object>? _logger;
     private readonly SerialPort? _port;
 
     private List<int>? _sliderIndexesChanged;
     private List<int> _volume = new();
 
 
-    public VolumeMasterCom(ILogger<object> logger)
+    public VolumeMasterCom(ILogger<object>? logger)
     {
         _logger = logger;
         _doLog = true;
         try
         {
-            _logger.LogInformation("Starting VolumeMasterCom");
+#if DEBUG
+            if (_logger != null) _logger.LogInformation("Starting VolumeMasterCom");
+#endif
             ConfigHelper();
             if (Config is null) return;
             _port = new SerialPort(Config?.PortName, Config!.BaudRate);
@@ -41,7 +43,28 @@ public class VolumeMasterCom
         }
         catch (Exception e)
         {
-            _logger.LogError(e.Message);
+            if (_logger != null) _logger.LogError(e.Message);
+        }
+    }
+
+    public VolumeMasterCom()
+    {
+        _doLog = false;
+        try
+        {
+            ConfigHelper();
+            if (Config is null) return;
+            _port = new SerialPort(Config?.PortName, Config!.BaudRate);
+            _port.Open();
+            _port.DtrEnable = true;
+            _port.RtsEnable = true;
+
+
+            _port.DataReceived += portOnDataReceived;
+        }
+        catch (Exception e)
+        {
+            _logger?.LogError(e.Message);
         }
     }
 
@@ -92,8 +115,10 @@ public class VolumeMasterCom
             if (_volume[i] == volume[i]) continue;
             if (Config != null && Math.Abs(volume[i] - _volume[i]) > Config.Smoothness)
             {
-                _logger.LogInformation(
+#if DEBUG
+                _logger?.LogInformation(
                     $"Unsmoothed volume change would be {Math.Abs(volume[i] - _volume[i])} bits, smoothing to {Config.Smoothness} bits");
+#endif
                 if (volume[i] > _volume[i])
                 {
                     _volume[i] += Config.Smoothness;
@@ -114,60 +139,64 @@ public class VolumeMasterCom
 
     private void ConfigHelper()
     {
-        var configPath = "";
+        var configPath = ConfigPath();
+        try
+        {
+            ReadConfig(configPath);
+        }
+        catch (Exception e)
+        {
+            HandleError(e, configPath);
+        }
+    }
+
+    public string ConfigPath()
+    {
+        var s = "";
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            configPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
-                         "/.config/VolumeMasterConfig";
+            s = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
+                "/.config/VolumeMasterConfig";
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            configPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
-                         "\\VolumeMaster\\config.yaml";
+            s = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
+                @"\VolumeMaster\config.yaml";
             if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
                                   "\\VolumeMaster"))
                 Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
                                           "\\VolumeMaster");
         }
 
-        _logger.LogError("Config path: " + configPath);
-        try
-        {
-            CreatNewConfig();
-        }
-        catch (Exception e)
-        {
-            ReadExistingConfig(e);
-        }
+        return s;
+    }
 
-        return;
-
-        void CreatNewConfig()
+    private void ReadConfig(string configPath)
+    {
+        if (!File.Exists(configPath))
         {
-            if (!File.Exists(configPath))
-            {
-                Config = new Config();
-                var yaml = new SerializerBuilder().Build();
-                var yamlString = yaml.Serialize(Config);
-                File.WriteAllText(configPath, yamlString);
-            }
-            else
-            {
-                var yaml = new DeserializerBuilder().Build();
-                Config = yaml.Deserialize<Config>(File.ReadAllText(configPath));
-            }
-        }
-
-        void ReadExistingConfig(Exception e)
-        {
-            if (!_doLog)
-                Console.WriteLine(e.Message);
-            else
-                _logger.LogError(e.Message);
-
             Config = new Config();
             var yaml = new SerializerBuilder().Build();
             var yamlString = yaml.Serialize(Config);
             File.WriteAllText(configPath, yamlString);
         }
+        else
+        {
+            var yaml = new DeserializerBuilder().Build();
+            Config = yaml.Deserialize<Config>(File.ReadAllText(configPath));
+        }
+    }
+
+    private void HandleError(Exception e, string configPath)
+    {
+        if (!_doLog)
+            Console.WriteLine(e.Message);
+        else
+            _logger?.LogError(e.Message);
+
+
+        Config = new Config();
+        var yaml = new SerializerBuilder().Build();
+        var yamlString = yaml.Serialize(Config);
+        File.WriteAllText(configPath, yamlString);
     }
 
 

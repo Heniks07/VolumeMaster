@@ -14,7 +14,7 @@ public class AudioApi
 
 
     /// <summary>
-    ///     Set the volume of an application
+    /// Set the volume of an application
     /// </summary>
     /// <param name="applicationName">The application name (Can be found in the Windows volume mixes)</param>
     /// <param name="volumePercent">The new volume as a float between 0 and 1</param>
