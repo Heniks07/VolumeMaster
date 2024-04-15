@@ -15,3 +15,6 @@ supossed to controle. To see what each poti does there is a 8x8 LET matrix. What
 | Previous button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
 | Next button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
 | Stop button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
+
+## Credits
+- <a href="https://www.flaticon.com/free-icon/filter_4663866?term=volume+mixer&page=1&position=1&origin=search&related_id=4663866">System Tray Icon in windows</a>
