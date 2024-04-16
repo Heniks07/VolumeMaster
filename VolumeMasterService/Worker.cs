@@ -2,55 +2,64 @@ using VolumeMasterCom;
 
 namespace VolumeMasterService;
 
-public class Worker : BackgroundService
+public class Worker(ILogger<Worker> logger) : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(_logger);
+        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger, true);
         var audioApi = new AudioApi();
 
-        volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
-        volumeMasterCom.RequestVolume();
-        await Task.Delay(100, stoppingToken);
-        volumeMasterCom.RequestVolume();
+        //volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
+        // volumeMasterCom.RequestVolume();
+        // await Task.Delay(100, stoppingToken);
+        // volumeMasterCom.RequestVolume();
 
 
-        void VmcOnVolumeChanged(object? sender, EventArgs e)
-        {
+        // void VmcOnVolumeChanged(object? sender, EventArgs e)
+        // {
+        //     try
+        //     {
+        //         var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
+        //         var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
+        //         // ReSharper disable once AccessToModifiedClosure
+        //         var volume = volumeMasterCom.GetVolume();
+        //         // ReSharper disable once AccessToModifiedClosure
+        //         var config = volumeMasterCom.Config;
+        //
+        //         ChangeVolume(indexesChanged, volume, config, audioApi);
+        //     }
+        //     catch (Exception exception)
+        //     {
+        //         _logger.LogError(exception, "Error while changing volume");
+        //     }
+        // }
+
+        while (!stoppingToken.IsCancellationRequested)
+
             try
             {
-                var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
-                var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
-                // ReSharper disable once AccessToModifiedClosure
-                var volume = volumeMasterCom.GetVolume();
-                // ReSharper disable once AccessToModifiedClosure
+                var changes = volumeMasterCom.GetVolumeWindows();
+                var indexesChanged = changes.SliderIndexesChanged;
+                var volume = changes.Volume;
+
+
                 var config = volumeMasterCom.Config;
 
                 ChangeVolume(indexesChanged, volume, config, audioApi);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Error while changing volume");
+                logger.LogError(exception, "Error while changing volume");
             }
-        }
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-        }
+        return Task.CompletedTask;
     }
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, AudioApi audioApi)
     {
-        if (indexesChanged is { Count: 0 })
+        if (indexesChanged is null)
             ChangeEveryVolume(volume, config, audioApi);
-        else if (indexesChanged is not null)
+        else if (indexesChanged.Count > 0)
             ChangeSliderVolumes(indexesChanged, volume, config, audioApi);
     }
 
@@ -66,19 +75,19 @@ public class Worker : BackgroundService
         foreach (var index in indexesChanged)
             try
             {
-                foreach (var applicationName in config?.SliderApplicationPairs[index]!)
+                foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
                 {
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[index] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
-                    _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                    logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while setting volume");
+                logger.LogError(e, "Error while setting volume");
             }
     }
 
@@ -93,19 +102,19 @@ public class Worker : BackgroundService
         for (var i = 0; i < volume.Count; i++)
             try
             {
-                foreach (var applicationName in config?.SliderApplicationPairs[i]!)
+                foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
                 {
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
-                    _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                    logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error while setting volume");
+                logger.LogError(e, "Error while setting volume");
             }
     }
 }

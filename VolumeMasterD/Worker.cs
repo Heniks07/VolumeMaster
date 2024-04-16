@@ -54,7 +54,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
         PulseAudioApi pulseAudioApi)
     {
         foreach (var index in indexesChanged)
-        foreach (var applicationName in config.SliderApplicationPairs[index])
+        foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
         {
             //map value from 0-1023 to 0-100
             var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
@@ -72,7 +72,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
     private void ChangeEveryVolume(IReadOnlyList<int> volume, Config? config, PulseAudioApi pulseAudioApi)
     {
         for (var i = 0; i < volume.Count; i++)
-            foreach (var applicationName in config.SliderApplicationPairs[i])
+            foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
             {
                 //map value from 0-1023 to 0-100
                 var newVolume = (int)Math.Round((double)volume[i] / 1023 * 100);
