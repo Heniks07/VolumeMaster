@@ -18,8 +18,8 @@ public class VolumeMasterCom
     private readonly ILogger<object>? _logger;
     private readonly SerialPort? _port;
 
-    private List<int>? _sliderIndexesChanged;
-    private List<int> _volume = new();
+    private readonly List<int>? _sliderIndexesChanged = [];
+    private List<int> _volume = [];
 
 
     public VolumeMasterCom(ILogger<object>? logger)
@@ -40,6 +40,37 @@ public class VolumeMasterCom
 
 
             _port.DataReceived += portOnDataReceived;
+        }
+        catch (Exception e)
+        {
+            if (_logger != null) _logger.LogError(e.Message);
+        }
+    }
+
+    /// <summary>
+    ///     This constructor is used for Windows since I didn't manage to get the other way to work properly
+    /// </summary>
+    /// <param name="logger">The logger from the service</param>
+    /// <param name="windows">Isn't used; Just there to make another constructor just for Windows</param>
+    public VolumeMasterCom(ILogger<object>? logger, bool windows)
+    {
+        _logger = logger;
+        _doLog = true;
+
+        try
+        {
+#if DEBUG
+            if (_logger != null) _logger.LogInformation("Starting VolumeMasterCom");
+#endif
+            ConfigHelper();
+            if (Config is null) return;
+            _port = new SerialPort(Config?.PortName, Config!.BaudRate);
+            _port?.Open();
+            if (_port != null)
+            {
+                _port.DtrEnable = true;
+                _port.RtsEnable = true;
+            }
         }
         catch (Exception e)
         {
@@ -70,6 +101,34 @@ public class VolumeMasterCom
 
     public Config? Config { get; private set; }
 
+    public (List<int>? SliderIndexesChanged, List<int> Volume) GetVolumeFromWidows()
+    {
+        var receivedData = _port?.ReadLine();
+        if (receivedData is null)
+            return (_sliderIndexesChanged, _volume);
+
+        //Split the received data into a list of integers
+        var newVolume = receivedData.Split('|').Select(int.Parse).ToList();
+
+        //_logger?.LogInformation("Received volume: " + string.Join(" | ", newVolume) + " at" + DateTimeOffset.Now.ToString("HH:mm:ss.fff"));
+
+        //if the volume list is empty, set it to the new volume
+        //Should only happen once
+        if (_volume.Count == 0)
+        {
+            _volume = newVolume;
+            return (null, newVolume);
+        }
+
+        //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
+        //Apply the new volume
+        _sliderIndexesChanged?.Clear();
+        CompareToOldVolume(newVolume, false);
+
+
+        return (_sliderIndexesChanged, _volume);
+    }
+
     public List<int> GetVolume()
     {
         return _volume;
@@ -97,8 +156,8 @@ public class VolumeMasterCom
 
         //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
         //Apply the new volume
-        _sliderIndexesChanged = new List<int>();
-        SmoothVolume(newVolume);
+        _sliderIndexesChanged?.Clear();
+        CompareToOldVolume(newVolume);
         VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexesChanged = _sliderIndexesChanged });
 
 #if DEBUG
@@ -107,13 +166,20 @@ public class VolumeMasterCom
 #endif
     }
 
-    private void SmoothVolume(IReadOnlyList<int> volume)
+    public List<int> GetSliderIndexesChanged()
+    {
+        return _sliderIndexesChanged ?? new List<int>();
+    }
+
+    private void CompareToOldVolume(IReadOnlyList<int> volume, bool doSmooth = true)
     {
         //If the volume is different from the last volume, change it not more than the smoothness
         for (var i = 0; i < volume.Count; i++)
         {
-            if (_volume[i] == volume[i]) continue;
-            if (Config != null && Math.Abs(volume[i] - _volume[i]) > Config.Smoothness)
+            if (Math.Abs(_volume[i] - volume[i]) < 3)
+                continue;
+
+            if (Config is not null && Math.Abs(volume[i] - _volume[i]) > Config.Smoothness && doSmooth)
             {
 #if DEBUG
                 _logger?.LogInformation(
