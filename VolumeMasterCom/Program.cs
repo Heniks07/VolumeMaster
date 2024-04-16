@@ -84,7 +84,7 @@ public class VolumeMasterCom
     {
         var receivedData = ((SerialPort)sender).ReadLine();
         //Split the received data into a list of integers
-        var newVolume = receivedData.Split(' ').Select(int.Parse).ToList();
+        var newVolume = receivedData.Split('|').Select(int.Parse).ToList();
 
         //if the volume list is empty, set it to the new volume
         //Should only happen once
@@ -102,8 +102,8 @@ public class VolumeMasterCom
         VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { SliderIndexesChanged = _sliderIndexesChanged });
 
 #if DEBUG
-            //Print the volume for debugging
-            Console.WriteLine("new volume: " + string.Join(" | ", _volume));
+        //Print the volume for debugging
+        Console.WriteLine("new volume: " + string.Join(" | ", _volume));
 #endif
     }
 
