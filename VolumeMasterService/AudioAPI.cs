@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CoreAudio;
 
 namespace VolumeMasterService;
@@ -30,7 +31,24 @@ public class AudioApi
             return;
         }
 
-        var session = _device.AudioSessionManager2.Sessions.FirstOrDefault(s => s.DisplayName == applicationName);
+        var session =
+            (from s in _device.AudioSessionManager2.Sessions
+                let process = Process.GetProcessById((int)s.ProcessID)
+                where process.ProcessName == applicationName
+                select s).FirstOrDefault();
+
+
         if (session?.SimpleAudioVolume != null) session.SimpleAudioVolume.MasterVolume = volumePercent;
+    }
+
+
+    /// <summary>
+    ///     Get a list of all applications that are currently playing audio
+    /// </summary>
+    public List<string> GetApplications()
+    {
+        return (from s in _device.AudioSessionManager2?.Sessions
+            let process = Process.GetProcessById((int)s.ProcessID)
+            select process.ProcessName).ToList();
     }
 }
