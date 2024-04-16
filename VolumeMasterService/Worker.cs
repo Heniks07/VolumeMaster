@@ -4,7 +4,7 @@ namespace VolumeMasterService;
 
 public class Worker(ILogger<Worker> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger, true);
         var audioApi = new AudioApi();
@@ -13,7 +13,6 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         // volumeMasterCom.RequestVolume();
         // await Task.Delay(100, stoppingToken);
         // volumeMasterCom.RequestVolume();
-
 
 
         // void VmcOnVolumeChanged(object? sender, EventArgs e)
@@ -39,12 +38,11 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
 
             try
             {
-                var changes = volumeMasterCom.GetVolumeFromWidows();
+                var changes = volumeMasterCom.GetVolumeWindows();
                 var indexesChanged = changes.SliderIndexesChanged;
                 var volume = changes.Volume;
-                
-                
-                
+
+
                 var config = volumeMasterCom.Config;
 
                 ChangeVolume(indexesChanged, volume, config, audioApi);
@@ -53,6 +51,8 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
             {
                 logger.LogError(exception, "Error while changing volume");
             }
+
+        return Task.CompletedTask;
     }
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, AudioApi audioApi)
@@ -75,13 +75,13 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         foreach (var index in indexesChanged)
             try
             {
-                foreach (var applicationName in config?.SliderApplicationPairs[index]!)
+                foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
                 {
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[index] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
-                    _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                    logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
                 }
             }
@@ -102,13 +102,13 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         for (var i = 0; i < volume.Count; i++)
             try
             {
-                foreach (var applicationName in config?.SliderApplicationPairs[i]!)
+                foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
                 {
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
-                    _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                    logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
                 }
             }
