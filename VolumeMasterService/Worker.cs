@@ -24,14 +24,21 @@ public class Worker : BackgroundService
 
         void VmcOnVolumeChanged(object? sender, EventArgs e)
         {
-            _logger.LogInformation("Volume changed");
-            var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
-            var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
+            try
+            {
+                var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
+                var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
+                // ReSharper disable once AccessToModifiedClosure
+                var volume = volumeMasterCom.GetVolume();
+                // ReSharper disable once AccessToModifiedClosure
+                var config = volumeMasterCom.Config;
 
-            var volume = volumeMasterCom.GetVolume();
-            var config = volumeMasterCom.Config;
-
-            ChangeVolume(indexesChanged, volume, config, audioApi);
+                ChangeVolume(indexesChanged, volume, config, audioApi);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error while changing volume");
+            }
         }
 
         while (!stoppingToken.IsCancellationRequested)
@@ -64,7 +71,9 @@ public class Worker : BackgroundService
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[index] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
+#if DEBUG
                     _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+#endif
                 }
             }
             catch (Exception e)
@@ -89,7 +98,9 @@ public class Worker : BackgroundService
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
                     audioApi.SetVolume(applicationName, newVolume);
+#if DEBUG
                     _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+#endif
                 }
             }
             catch (Exception e)

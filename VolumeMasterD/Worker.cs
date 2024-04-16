@@ -2,18 +2,11 @@ using VolumeMasterCom;
 
 namespace VolumeMasterD;
 
-public class Worker : BackgroundService
+public class Worker(ILogger<Worker>? logger) : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger)
-    {
-        _logger = logger;
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(_logger);
+        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var pulseAudioApi = new PulseAudioApi();
 
         volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
@@ -24,7 +17,7 @@ public class Worker : BackgroundService
 
         void VmcOnVolumeChanged(object? sender, EventArgs e)
         {
-            _logger.LogInformation("Volume changed");
+            logger.LogInformation("Volume changed");
             var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
             var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
 
@@ -66,7 +59,7 @@ public class Worker : BackgroundService
             //map value from 0-1023 to 0-100
             var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
             pulseAudioApi.SetVolume(applicationName, newVolume);
-            _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+            logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
         }
     }
 
@@ -84,7 +77,7 @@ public class Worker : BackgroundService
                 //map value from 0-1023 to 0-100
                 var newVolume = (int)Math.Round((double)volume[i] / 1023 * 100);
                 pulseAudioApi.SetVolume(applicationName, newVolume);
-                _logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
             }
     }
 }
