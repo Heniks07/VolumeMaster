@@ -15,6 +15,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         // volumeMasterCom.RequestVolume();
 
 
+
         // void VmcOnVolumeChanged(object? sender, EventArgs e)
         // {
         //     try
@@ -41,8 +42,9 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
                 var changes = volumeMasterCom.GetVolumeFromWidows();
                 var indexesChanged = changes.SliderIndexesChanged;
                 var volume = changes.Volume;
-
-
+                
+                
+                
                 var config = volumeMasterCom.Config;
 
                 ChangeVolume(indexesChanged, volume, config, audioApi);
