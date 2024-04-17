@@ -4,12 +4,12 @@ namespace VolumeMasterD;
 
 public class Worker(ILogger<Worker>? logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var pulseAudioApi = new PulseAudioApi();
 
-        volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
+        /*volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
         volumeMasterCom.RequestVolume();
         await Task.Delay(100, stoppingToken);
         volumeMasterCom.RequestVolume();
@@ -28,11 +28,28 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
 
 
             //pulseAudioApi.SetVolume("Chromium", 50);
-        }
+        }*/
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            try
+            {
+                var changes = volumeMasterCom.GetVolumeWindows();
+                var indexesChanged = changes.SliderIndexesChanged;
+                var volume = changes.Volume;
+
+
+                var config = volumeMasterCom.Config;
+
+                ChangeVolume(indexesChanged, volume, config, pulseAudioApi);
+            }
+            catch (Exception exception)
+            {
+                logger?.LogError(exception, "Error while changing volume");
+            }
         }
+
+        return Task.CompletedTask;
     }
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, PulseAudioApi pulseAudioApi)
@@ -59,7 +76,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
             //map value from 0-1023 to 0-100
             var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
             pulseAudioApi.SetVolume(applicationName, newVolume);
-            logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+            logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
         }
     }
 
@@ -77,7 +94,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
                 //map value from 0-1023 to 0-100
                 var newVolume = (int)Math.Round((double)volume[i] / 1023 * 100);
                 pulseAudioApi.SetVolume(applicationName, newVolume);
-                logger.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
             }
     }
 }

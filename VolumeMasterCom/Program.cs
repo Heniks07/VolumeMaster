@@ -17,7 +17,7 @@ public partial class VolumeMasterCom
 
     private readonly List<int>? _sliderIndexesChanged = [];
 
-
+    /*
     /// <summary>
     /// Starts the VolumeMasterCom with logging
     /// </summary>
@@ -45,15 +45,14 @@ public partial class VolumeMasterCom
         {
             if (_logger != null) _logger.LogError(e.Message);
         }
-    }
+    }*/
 
     /// <summary>
     /// This constructor is used for Windows since I didn't manage to get the other way to work properly.
     /// Will probably either be removed or becaome the only constructor with logging in the future
     /// </summary>
     /// <param name="logger">The logger from the service</param>
-    /// <param name="windows">Isn't used; Just there to make another constructor just for Windows</param>
-    public VolumeMasterCom(ILogger<object>? logger, bool windows)
+    public VolumeMasterCom(ILogger<object>? logger)
     {
         _logger = logger;
         _doLog = true;
@@ -94,9 +93,6 @@ public partial class VolumeMasterCom
             _port.Open();
             _port.DtrEnable = true;
             _port.RtsEnable = true;
-
-
-            _port.DataReceived += portOnDataReceived;
         }
         catch (Exception e)
         {
