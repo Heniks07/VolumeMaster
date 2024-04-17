@@ -6,7 +6,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger, true);
+        var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var audioApi = new AudioApi();
 
         //volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
@@ -35,7 +35,6 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         // }
 
         while (!stoppingToken.IsCancellationRequested)
-
             try
             {
                 var changes = volumeMasterCom.GetVolumeWindows();
