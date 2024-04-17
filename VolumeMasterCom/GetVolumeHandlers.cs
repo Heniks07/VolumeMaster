@@ -51,10 +51,60 @@ public partial class VolumeMasterCom
             return (null, newVolume);
         }
 
-        //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
-        //Apply the new volume
-        _sliderIndexesChanged?.Clear();
-        CompareToOldVolume(newVolume, false);
+            //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
+            //Apply the new volume
+            _sliderIndexesChanged?.Clear();
+            CompareToOldVolume(newVolume, false);
+        }
+        catch (InvalidOperationException invalidOperationException)
+        {
+            var errorMessage = "Error while reading from serial port: " + invalidOperationException.Message;
+            var infoMessage =
+                $"Make sure the right serial port ({Config.PortName}) is configured in the config file ({ConfigPath()}) and no other application is using the port.";
+            printLog(errorMessage, LogLevel.Error);
+            printLog(infoMessage, LogLevel.Info);
+        }
+
+        return (_sliderIndexesChanged, _volume);
+    }
+
+    private void printLog(string message, LogLevel logLevel)
+    {
+        if (_doLog)
+        {
+            switch (logLevel)
+            {
+                case LogLevel.Info:
+                    _logger?.LogInformation(message);
+                    break;
+                case LogLevel.Warning:
+                    _logger?.LogWarning(message);
+                    break;
+                case LogLevel.Error:
+                    _logger?.LogError(message);
+                    break;
+            }
+
+            return;
+        }
+
+        switch (logLevel)
+        {
+            case LogLevel.Info:
+                Console.WriteLine(message);
+                break;
+            case LogLevel.Warning:
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(message);
+                Console.ResetColor();
+                break;
+            case LogLevel.Error:
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(message);
+                Console.ResetColor();
+                break;
+        }
+    }
 
 
         return (_sliderIndexesChanged, _volume);
