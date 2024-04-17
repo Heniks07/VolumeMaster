@@ -30,8 +30,16 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
             //pulseAudioApi.SetVolume("Chromium", 50);
         }*/
 
+        //Update the volume of the applications every 10 seconds
+        var lastConfigUpdate = DateTime.MinValue;
         while (!stoppingToken.IsCancellationRequested)
         {
+            if ((DateTime.Now - lastConfigUpdate).TotalMilliseconds > 10000)
+            {
+                lastConfigUpdate = DateTime.Now;
+                volumeMasterCom.ConfigHelper();
+            }
+
             try
             {
                 var changes = volumeMasterCom.GetVolumeWindows();

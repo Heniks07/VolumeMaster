@@ -33,8 +33,15 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         //         _logger.LogError(exception, "Error while changing volume");
         //     }
         // }
-
+        var lastConfigUpdate = DateTime.MinValue;
         while (!stoppingToken.IsCancellationRequested)
+        {
+            if ((DateTime.Now - lastConfigUpdate).TotalMilliseconds > 10000)
+            {
+                lastConfigUpdate = DateTime.Now;
+                volumeMasterCom.ConfigHelper();
+            }
+
             try
             {
                 var changes = volumeMasterCom.GetVolumeWindows();
@@ -50,6 +57,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
             {
                 logger.LogError(exception, "Error while changing volume");
             }
+        }
 
         return Task.CompletedTask;
     }

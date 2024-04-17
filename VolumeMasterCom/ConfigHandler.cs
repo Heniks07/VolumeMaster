@@ -8,9 +8,14 @@ public partial class VolumeMasterCom
 {
     public Config? Config { get; private set; }
 
-    private void ConfigHelper()
+    public void ConfigHelper()
     {
         var configPath = ConfigPath();
+        LoadConfig(configPath);
+    }
+
+    private void LoadConfig(string configPath)
+    {
         try
         {
             ReadConfig(configPath);
@@ -25,8 +30,14 @@ public partial class VolumeMasterCom
     {
         var s = "";
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
             s = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
-                "/.config/VolumeMasterConfig";
+                "/.config/VolumeMaster/VolumeMasterConfig";
+            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
+                                  "/.config/VolumeMaster"))
+                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) +
+                                          "/.config/VolumeMaster");
+        }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             s = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) +
