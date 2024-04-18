@@ -15,3 +15,8 @@ supossed to controle. To see what each poti does there is a 8x8 LET matrix. What
 | Previous button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
 | Next button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
 | Stop button | <ul><li>[ ] coming soon </li></ul>  | <ul><li>[ ] coming soon </li></ul> |
+
+## Requirements
+### Linux
+- playerctl    (for deteail of how to install, check out their [github repo](https://github.com/altdesktop/playerctl))
+- Pulse audio
