@@ -44,7 +44,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
 
             try
             {
-                var changes = volumeMasterCom.GetVolumeWindows();
+                var changes = volumeMasterCom.GetVolume();
                 var indexesChanged = changes.SliderIndexesChanged;
                 var volume = changes.Volume;
 

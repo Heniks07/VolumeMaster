@@ -101,7 +101,7 @@ public class Config
     public List<List<List<string>>> SliderApplicationPairsPresets { get; set; } =
         [[["Firefox", "Chromium"], ["master"]], [["steam"], ["master"]]];
 
-    public ushort SelectedPreset { get; set; } = 0;
+    public ushort SelectedPreset { get; set; }
 
     public bool UpdateAfterPresetChange { get; set; } = true;
 }

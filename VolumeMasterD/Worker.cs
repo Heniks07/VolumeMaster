@@ -1,13 +1,21 @@
+using System.Diagnostics;
 using VolumeMasterCom;
 
 namespace VolumeMasterD;
 
 public class Worker(ILogger<Worker>? logger) : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var pulseAudioApi = new PulseAudioApi();
+
+
+        volumeMasterCom.PlayPause += PlayPause;
+        volumeMasterCom.Next += Next;
+        volumeMasterCom.Previous += Previous;
+        volumeMasterCom.Stop += Stop;
+
 
         /*volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
         volumeMasterCom.RequestVolume();
@@ -29,9 +37,14 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
 
             //pulseAudioApi.SetVolume("Chromium", 50);
         }*/
+        logger?.LogInformation("Config path is: " + volumeMasterCom.ConfigPath());
 
+        logger?.LogInformation("Starting VolumeMasterD");
         //Update the volume of the applications every 10 seconds
         var lastConfigUpdate = DateTime.MinValue;
+
+        await Task.Delay(10, stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             if ((DateTime.Now - lastConfigUpdate).TotalMilliseconds > 10000)
@@ -42,7 +55,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
 
             try
             {
-                var changes = volumeMasterCom.GetVolumeWindows();
+                var changes = volumeMasterCom.GetVolume();
                 var indexesChanged = changes.SliderIndexesChanged;
                 var volume = changes.Volume;
 
@@ -56,15 +69,33 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
                 logger?.LogError(exception, "Error while changing volume");
             }
         }
+    }
 
-        return Task.CompletedTask;
+    private void PlayPause(object? sender, EventArgs e)
+    {
+        ExecuteCommand("playerctl", "play-pause");
+    }
+
+    private void Next(object? sender, EventArgs e)
+    {
+        ExecuteCommand("playerctl", "next");
+    }
+
+    private void Previous(object? sender, EventArgs e)
+    {
+        ExecuteCommand("playerctl", "previous");
+    }
+
+    private void Stop(object? sender, EventArgs e)
+    {
+        ExecuteCommand("playerctl", "stop");
     }
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, PulseAudioApi pulseAudioApi)
     {
-        if (indexesChanged is { Count: 0 })
+        if (indexesChanged is null)
             ChangeEveryVolume(volume, config, pulseAudioApi);
-        else if (indexesChanged is not null)
+        else if (indexesChanged.Count > 0)
             ChangeSliderVolumes(indexesChanged, volume, config, pulseAudioApi);
     }
 
@@ -84,7 +115,9 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
             //map value from 0-1023 to 0-100
             var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
             pulseAudioApi.SetVolume(applicationName, newVolume);
+#if DEBUG
             logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
+#endif
         }
     }
 
@@ -102,7 +135,33 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
                 //map value from 0-1023 to 0-100
                 var newVolume = (int)Math.Round((double)volume[i] / 1023 * 100);
                 pulseAudioApi.SetVolume(applicationName, newVolume);
+#if DEBUG
                 logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
+#endif
             }
+    }
+
+
+    /// <summary>
+    ///     Execute a command with arguments
+    /// </summary>
+    /// <param name="command">command to execute</param>
+    /// <param name="arguments">arguments to pass</param>
+    private void ExecuteCommand(string command, string arguments)
+    {
+        try
+        {
+            var process = new Process();
+            process.StartInfo.FileName = command;
+            process.StartInfo.Arguments = arguments;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.Start();
+            process.WaitForExit();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error executing command: " + ex.Message);
+        }
     }
 }

@@ -48,8 +48,7 @@ public partial class VolumeMasterCom
     }*/
 
     /// <summary>
-    /// This constructor is used for Windows since I didn't manage to get the other way to work properly.
-    /// Will probably either be removed or becaome the only constructor with logging in the future
+    /// This constructor is used for Services with logging
     /// </summary>
     /// <param name="logger">The logger from the service</param>
     public VolumeMasterCom(ILogger<object>? logger)
@@ -57,25 +56,26 @@ public partial class VolumeMasterCom
         _logger = logger;
         _doLog = true;
 
-        try
-        {
+
 #if DEBUG
             if (_logger != null) _logger.LogInformation("Starting VolumeMasterCom");
 #endif
 
-            ConfigHelper();
-            if (Config is null) return;
+        ConfigHelper();
+        if (Config is null) return;
+        try
+        {
             _port = new SerialPort(Config?.PortName, Config!.BaudRate);
             _port?.Open();
-            if (_port != null)
-            {
-                _port.DtrEnable = true;
-                _port.RtsEnable = true;
-            }
+            if (_port == null) return;
+            _port.DtrEnable = true;
+            _port.RtsEnable = true;
         }
-        catch (Exception e)
+        catch (InvalidOperationException)
         {
-            if (_logger != null) _logger.LogError(e.Message);
+            _logger?.LogError("Error while reading from serial port");
+            _logger?.LogInformation(
+                $"Make sure the right serial port ({Config.PortName}) is configured in the config file ({ConfigPath()}) and no other application is using the port.");
         }
     }
 
