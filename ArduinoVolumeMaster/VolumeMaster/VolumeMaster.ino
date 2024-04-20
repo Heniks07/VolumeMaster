@@ -2,17 +2,31 @@
 int pins[2] = { A0, A1 };
 int lastVolume[2] = { -10, -10 };
 bool initialized;
-ezButton button(7);
+ezButton changePreset(2);
+ezButton playPause(3);
+ezButton next(4);
+ezButton previous(5);
+ezButton stop(6);
+
+
 
 void setup() {
   Serial.begin(9600);
   initialized = false;
-  button.setDebounceTime(30);
+  changePreset.setDebounceTime(30);
+  playPause.setDebounceTime(30);
+  next.setDebounceTime(30);
+  previous.setDebounceTime(30);
+  stop.setDebounceTime(30);
 }
 
 
 void loop() {
-  button.loop();
+  changePreset.loop();
+  playPause.loop();
+  next.loop();
+  previous.loop();
+  stop.loop();
   
   for (int i = 0; i < (sizeof(pins) / sizeof(int)); i++) {
     int currentVolume = analogRead(pins[i]);
@@ -24,8 +38,20 @@ void loop() {
   
   Serial.println();
 
-  if (button.isPressed()) {
+  if (changePreset.isPressed()) {
     Serial.println("VM.changePreset");
+  }
+  if(playPause.isPressed()){
+    Serial.println("VM.playPause");
+  }
+  if(next.isPressed()){
+    Serial.println("VM.next");
+  }
+  if(previous.isPressed()){
+    Serial.println("VM.previous");
+  }
+  if(stop.isPressed()){
+    Serial.println("VM.stop");
   }
 
 

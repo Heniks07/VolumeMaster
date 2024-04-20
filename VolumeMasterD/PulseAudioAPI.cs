@@ -39,24 +39,25 @@ public class PulseAudioApi
 
     private async Task SerSinkInputVolume(string applicationName, int volumePercent)
     {
-        var input = _inputs?.Find(i => i.Properties?.ApplicationName == applicationName);
+        var input = _inputs?.FindAll(i => i.Properties?.ApplicationName == applicationName);
         if (input == null)
             return;
 
-
-        var process = new Process
+        foreach (var process in input.Select(sinkInput => new Process
+                 {
+                     StartInfo = new ProcessStartInfo
+                     {
+                         FileName = "pactl",
+                         Arguments = $"set-sink-input-volume {sinkInput.Index} {volumePercent}%",
+                         RedirectStandardOutput = true,
+                         UseShellExecute = false,
+                         CreateNoWindow = true
+                     }
+                 }))
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "pactl",
-                Arguments = $"set-sink-input-volume {input.Index} {volumePercent}%",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-        process.Start();
-        await process.WaitForExitAsync();
+            process.Start();
+            await process.WaitForExitAsync();
+        }
     }
 
     private async Task SetSinkVolume(int volumePercent)
