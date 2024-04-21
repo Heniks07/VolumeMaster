@@ -1,6 +1,7 @@
 #include <ezButton.h>
-int pins[2] = { A0, A1 };
-int lastVolume[2] = { -10, -10 };
+const int numberPins = 2;
+const int pins[numberPins] = { A0, A1};
+int lastVolume[numberPins] = {};
 bool initialized;
 ezButton changePreset(2);
 ezButton playPause(3);

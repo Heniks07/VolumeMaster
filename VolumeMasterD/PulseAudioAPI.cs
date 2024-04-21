@@ -62,6 +62,7 @@ public class PulseAudioApi
 
     private async Task SetSinkVolume(int volumePercent)
     {
+        if (_inputs?.Count == 0) return;
         var sink = _inputs?[0].Sink;
 
         var process = new Process
