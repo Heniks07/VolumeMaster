@@ -95,14 +95,17 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
         PulseAudioApi pulseAudioApi)
     {
         foreach (var index in indexesChanged)
-        foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
         {
-            //map value from 0-1023 to 0-100
-            var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
-            pulseAudioApi.SetVolume(applicationName, newVolume);
+            if (config?.SliderApplicationPairsPresets[config.SelectedPreset].Count <= index) continue;
+            foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
+            {
+                //map value from 0-1023 to 0-100
+                var newVolume = (int)Math.Round((double)volume[index] / 1023 * 100);
+                pulseAudioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
-            logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
+                logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
+            }
         }
     }
 
@@ -114,7 +117,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
     /// <param name="pulseAudioApi">An instance of the Api</param>
     private void ChangeEveryVolume(IReadOnlyList<int> volume, Config? config, PulseAudioApi pulseAudioApi)
     {
-        for (var i = 0; i < volume.Count; i++)
+        for (var i = 0; i < config?.SliderApplicationPairsPresets[config.SelectedPreset].Count; i++)
             foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
             {
                 //map value from 0-1023 to 0-100

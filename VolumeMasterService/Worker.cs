@@ -85,6 +85,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
         foreach (var index in indexesChanged)
             try
             {
+                if (config?.SliderApplicationPairsPresets[config.SelectedPreset].Count <= index) continue;
                 foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][index]!)
                 {
                     //map value from 0-1023 to 0-100
@@ -109,7 +110,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
     /// <param name="audioApi">An instance of the Api</param>
     private void ChangeEveryVolume(List<int> volume, Config? config, AudioApi audioApi)
     {
-        for (var i = 0; i < volume.Count; i++)
+        for (var i = 0; i < config?.SliderApplicationPairsPresets[config.SelectedPreset].Count; i++)
             try
             {
                 foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
