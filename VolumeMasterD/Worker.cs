@@ -51,6 +51,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
             }
             catch (Exception exception)
             {
+                if (exception is FormatException) continue;
                 logger?.LogError(exception, "Error while changing volume");
             }
         }
