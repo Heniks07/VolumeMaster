@@ -18,6 +18,8 @@ public partial class VolumeMasterCom
 
     public (List<int>? SliderIndexesChanged, List<int> Volume) GetVolume()
     {
+        if(_port is {IsOpen: false}) 
+            _port.Open();
         try
         {
             var receivedData = _port?.ReadLine();
@@ -50,7 +52,13 @@ public partial class VolumeMasterCom
             PrintLog(
                 $"Make sure the right serial port ({Config?.PortName}) is configured in the config file ({ConfigPath()}) and no other application is using the port.",
                 LogLevel.Info);
+        }catch (ArgumentOutOfRangeException e)
+        {
+            _port?.Close();
+            PrintLog(e.Message, LogLevel.Error);
         }
+
+        
 
         return (_sliderIndexesChanged, _volume);
     }

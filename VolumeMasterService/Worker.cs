@@ -4,7 +4,7 @@ namespace VolumeMasterService;
 
 public class Worker(ILogger<Worker> logger) : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var audioApi = new AudioApi();
@@ -53,13 +53,16 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
 
                 ChangeVolume(indexesChanged, volume, config, audioApi);
             }
+            catch (UnauthorizedAccessException)
+            {
+                await Task.Delay(1000, stoppingToken);
+                logger?.LogWarning("Please reconnect the Arduino");
+            }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Error while changing volume");
             }
         }
-
-        return Task.CompletedTask;
     }
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, AudioApi audioApi)

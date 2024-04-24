@@ -16,36 +16,7 @@ public partial class VolumeMasterCom
     private readonly ILogger<object>? _logger;
 
     private readonly List<int>? _sliderIndexesChanged = [];
-
-    /*
-    /// <summary>
-    /// Starts the VolumeMasterCom with logging
-    /// </summary>
-    /// <param name="logger"></param>
-    public VolumeMasterCom(ILogger<object>? logger)
-    {
-        _logger = logger;
-        _doLog = true;
-        try
-        {
-#if DEBUG
-            if (_logger != null) _logger.LogInformation("Starting VolumeMasterCom");
-#endif
-            ConfigHelper();
-            if (Config is null) return;
-            _port = new SerialPort(Config?.PortName, Config!.BaudRate);
-            _port.Open();
-            _port.DtrEnable = true;
-            _port.RtsEnable = true;
-
-
-            _port.DataReceived += portOnDataReceived;
-        }
-        catch (Exception e)
-        {
-            if (_logger != null) _logger.LogError(e.Message);
-        }
-    }*/
+    
 
     /// <summary>
     /// This constructor is used for Services with logging
@@ -66,6 +37,8 @@ public partial class VolumeMasterCom
         try
         {
             _port = new SerialPort(Config?.PortName, Config!.BaudRate);
+            if(!File.Exists(Config?.PortName))
+                return;
             _port?.Open();
             if (_port == null) return;
             _port.DtrEnable = true;

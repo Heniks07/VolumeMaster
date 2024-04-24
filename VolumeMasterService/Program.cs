@@ -2,7 +2,7 @@ namespace VolumeMasterService;
 
 public static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = Host.CreateApplicationBuilder(args);
         builder.Services.AddHostedService<Worker>();
@@ -18,6 +18,6 @@ public static class Program
             .UseWindowsService(options => { options.ServiceName = "VolumeMasterService"; })
             .ConfigureServices(services => { services.AddHostedService<Worker>(); })
             .Build();
-        host.Run();
+       await host.RunAsync();
     }
 }

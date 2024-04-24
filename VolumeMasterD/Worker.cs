@@ -17,26 +17,6 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
         volumeMasterCom.Stop += Stop;
 
 
-        /*volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
-        volumeMasterCom.RequestVolume();
-        await Task.Delay(100, stoppingToken);
-        volumeMasterCom.RequestVolume();
-
-
-        void VmcOnVolumeChanged(object? sender, EventArgs e)
-        {
-            logger.LogInformation("Volume changed");
-            var volumeChangedEventArgs = e as VolumeMasterCom.VolumeMasterCom.VolumeChangedEventArgs;
-            var indexesChanged = volumeChangedEventArgs?.SliderIndexesChanged;
-
-            var volume = volumeMasterCom.GetVolume();
-            var config = volumeMasterCom.Config;
-
-            ChangeVolume(indexesChanged, volume, config, pulseAudioApi);
-
-
-            //pulseAudioApi.SetVolume("Chromium", 50);
-        }*/
         logger?.LogInformation("Config path is: " + volumeMasterCom.ConfigPath());
 
         logger?.LogInformation("Starting VolumeMasterD");
@@ -63,6 +43,11 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
                 var config = volumeMasterCom.Config;
 
                 ChangeVolume(indexesChanged, volume, config, pulseAudioApi);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                await Task.Delay(1000, stoppingToken);
+                logger?.LogWarning("Please reconnect the Arduino");
             }
             catch (Exception exception)
             {
