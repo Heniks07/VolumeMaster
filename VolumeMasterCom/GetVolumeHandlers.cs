@@ -22,7 +22,7 @@ public partial class VolumeMasterCom
             _port.Open();
         try
         {
-            var receivedData = _port?.ReadLine();
+            var receivedData = _port?.ReadExisting().Split('\n')[^2];
             if (receivedData is null)
                 return (_sliderIndexesChanged, _volume);
 

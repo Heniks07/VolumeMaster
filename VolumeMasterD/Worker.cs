@@ -5,6 +5,8 @@ namespace VolumeMasterD;
 
 public class Worker(ILogger<Worker>? logger) : BackgroundService
 {
+    private DateTime _lastConfigUpdate = DateTime.MinValue;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
@@ -21,39 +23,49 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
 
         logger?.LogInformation("Starting VolumeMasterD");
         //Update the volume of the applications every 10 seconds
-        var lastConfigUpdate = DateTime.MinValue;
 
         await Task.Delay(10, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            if ((DateTime.Now - lastConfigUpdate).TotalMilliseconds > 10000)
+            await Update(stoppingToken, volumeMasterCom, pulseAudioApi);
+        }
+    }
+
+    private async Task Update(CancellationToken stoppingToken, VolumeMasterCom.VolumeMasterCom volumeMasterCom,
+        PulseAudioApi pulseAudioApi)
+    {
+        if ((DateTime.Now - _lastConfigUpdate).TotalMilliseconds > 10000)
+        {
+            _lastConfigUpdate = DateTime.Now;
+            volumeMasterCom.ConfigHelper();
+        }
+
+        try
+        {
+            if (pulseAudioApi.CheckForChanges().Result)
             {
-                lastConfigUpdate = DateTime.Now;
-                volumeMasterCom.ConfigHelper();
+                ChangeEveryVolume(volumeMasterCom.GetVolume().Volume, volumeMasterCom.Config, pulseAudioApi);
+                return;
             }
 
-            try
-            {
-                var changes = volumeMasterCom.GetVolume();
-                var indexesChanged = changes.SliderIndexesChanged;
-                var volume = changes.Volume;
+            var changes = volumeMasterCom.GetVolume();
+            var indexesChanged = changes.SliderIndexesChanged;
+            var volume = changes.Volume;
 
+            var config = volumeMasterCom.Config;
 
-                var config = volumeMasterCom.Config;
-
-                ChangeVolume(indexesChanged, volume, config, pulseAudioApi);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                await Task.Delay(1000, stoppingToken);
-                logger?.LogWarning("Please reconnect the Arduino");
-            }
-            catch (Exception exception)
-            {
-                if (exception is FormatException) continue;
-                logger?.LogError(exception, "Error while changing volume");
-            }
+            ChangeVolume(indexesChanged, volume, config, pulseAudioApi);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            await Task.Delay(1000, stoppingToken);
+            logger?.LogWarning("Please reconnect the Arduino");
+        }
+        catch (Exception exception)
+        {
+            if (exception is FormatException) return;
+            logger?.LogError(exception, "Error while changing volume");
         }
     }
 
