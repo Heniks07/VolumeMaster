@@ -26,7 +26,11 @@ public partial class VolumeMasterCom
 
         try
         {
-            var receivedData = _port?.ReadExisting().Split('\n')[^2];
+            var allData = _port?.ReadExisting();
+            if (allData is { Length: 0 })
+                return (_sliderIndexesChanged, _volume);
+
+            var receivedData = allData?.Split('\n')[^2];
             if (receivedData is null)
                 return (_sliderIndexesChanged, _volume);
 
