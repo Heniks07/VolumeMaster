@@ -66,6 +66,11 @@ public partial class VolumeMasterCom
             _port?.Close();
             PrintLog(e.Message, LogLevel.Error);
         }
+        catch (OverflowException e)
+        {
+            _port?.Close();
+            PrintLog(e.Message, LogLevel.Error);
+        }
 
 
         return (_sliderIndexesChanged, _volume);
