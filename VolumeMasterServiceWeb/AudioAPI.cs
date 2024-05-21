@@ -1,17 +1,12 @@
 using System.Diagnostics;
 using CoreAudio;
 
-namespace VolumeMasterService;
+namespace VolumeMasterServiceWeb;
 
 public class AudioApi
 {
-    public MMDevice Device;
-
-    public AudioApi()
-    {
-        Device = new MMDeviceEnumerator(Guid.NewGuid()).GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-        
-    }
+    public MMDevice Device =
+        new MMDeviceEnumerator(Guid.NewGuid()).GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 
 
     /// <summary>
@@ -32,7 +27,7 @@ public class AudioApi
         }
 
         Device = new MMDeviceEnumerator(Guid.NewGuid()).GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-        
+
         var session =
             (from s in Device.AudioSessionManager2?.Sessions
                 let process = Process.GetProcessById((int)s.ProcessID)
@@ -40,7 +35,8 @@ public class AudioApi
                 select s).FirstOrDefault();
 
 
-        if (session?.SimpleAudioVolume != null) session.SimpleAudioVolume.MasterVolume = volumePercent;
+        if (session?.SimpleAudioVolume != null)
+            session.SimpleAudioVolume.MasterVolume = volumePercent;
     }
 
 

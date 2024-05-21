@@ -119,7 +119,7 @@ public class Worker(ILogger<Worker>? logger) : BackgroundService
     private void ChangeEveryVolume(IReadOnlyList<int> volume, Config? config, PulseAudioApi pulseAudioApi)
     {
         for (var i = 0; i < config?.SliderApplicationPairsPresets[config.SelectedPreset].Count; i++)
-            foreach (var applicationName in config?.SliderApplicationPairsPresets[config.SelectedPreset][i]!)
+            foreach (var applicationName in config.SliderApplicationPairsPresets[config.SelectedPreset][i])
             {
                 //map value from 0-1023 to 0-100
                 var newVolume = (int)Math.Round((double)volume[i] / 1023 * 100);

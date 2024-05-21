@@ -9,8 +9,10 @@
 
     <ItemGroup>
         <PackageReference Include="CoreAudio" Version="1.37.0"/>
+        <PackageReference Include="InputSimulator" Version="1.0.4" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     </ItemGroup>
 
     <ItemGroup>
