@@ -15,6 +15,11 @@ VolumeMaster can change the volume level of single applications or whole devices
 | Previous button                 | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
 | Next button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
 | Stop button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
+|                                 | Android Remote                     |                                    |
+| Manual override                 | <ul><li>[x] </li></ul>             | <ul><li>[ ] coming soon </li></ul> |
+| Play/Pause                      | <ul><li>[x] </li></ul>             | <ul><li>[ ] coming soon </li></ul> |
+| Previous/Next                   | <ul><li>[x] </li></ul>             | <ul><li>[ ] coming soon </li></ul> |
+| Update Config                   | <ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 
 ## Requirements
 ### Linux
