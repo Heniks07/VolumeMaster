@@ -22,7 +22,7 @@ VolumeMaster can change the volume level of single applications or whole devices
 | Update Config                   | <ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 
 ### Disclaimer
-I don't have a particular order in which I develop these features. I just work on what I need or what I just feel like developing. Please don't ask me for features. Should you need some, try to implement them yourself and send a push request. 
+I don't have a particular order in which I develop these features. I just work on what I need or what I just feel like developing. It also depends on whether I have time to continue building the hardware part. So please don't ask me for features I already want to do. I will complete everything given enough time. Should you need something now, try to implement it yourself and send a push request.
 
 ## Requirements
 ### Linux
