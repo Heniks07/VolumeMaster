@@ -27,6 +27,11 @@ public class PulseAudioApi
         return inputs;
     }
 
+    public List<string?> GetApplications()
+    {
+        return _inputs != null ? _inputs.Select(x => x.Properties?.ApplicationName).ToList() : [];
+    }
+
     public async Task<bool> CheckForChanges()
     {
         var newInputs = await RequestInputs();

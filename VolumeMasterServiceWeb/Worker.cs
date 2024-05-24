@@ -76,12 +76,6 @@ public class Worker : BackgroundService
     {
         if (indexesChanged is null)
             return;
-
-        // if (indexesChanged.Contains(-1))
-        // {
-        //     ChangeEveryVolume(volume, config, audioApi);
-        // }
-        /*else*/
         if (indexesChanged.Count <= 0 || indexesChanged.Count(x => x == 0) == indexesChanged.Count) return;
 
         OnVolumeChanged(new VolumeChangedEventArgs()
@@ -108,7 +102,7 @@ public class Worker : BackgroundService
         {
             if (indexesChanged[i] == 0)
                 continue;
-            ApplyVolumeChange(volume, config, audioApi, i);
+            ApplyVolumeChange(volume, config, i);
         }
         // for (var i = 0; i < indexesChanged.Count; i++)
         // {
@@ -126,7 +120,7 @@ public class Worker : BackgroundService
         // }
     }
 
-    private void ApplyVolumeChange(List<int> volume, Config? config, AudioApi audioApi, int i)
+    private void ApplyVolumeChange(List<int> volume, Config? config, int i)
     {
         try
         {
@@ -135,7 +129,7 @@ public class Worker : BackgroundService
             {
                 //map value from 0-1023 to 0-100
                 var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
-                audioApi.SetVolume(applicationName, newVolume);
+                AudioApi.SetVolume(applicationName, newVolume);
 #if DEBUG
                 _logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
