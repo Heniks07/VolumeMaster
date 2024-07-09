@@ -28,6 +28,10 @@ public class Worker : BackgroundService
         {
             ChangeEveryVolume(VolumeMasterCom.GetVolume().Volume, VolumeMasterCom.Config, AudioApi);
         };
+        VolumeMasterCom.PlayPause += (_, _) => MultiMediaApi.Pause();
+        VolumeMasterCom.Next += (_, _) => MultiMediaApi.Next();
+        VolumeMasterCom.Previous += (_, _) => MultiMediaApi.Previous();
+        VolumeMasterCom.Stop += (_, _) => MultiMediaApi.Stop();
 
         var lastConfigUpdate = DateTime.MinValue;
         while (!stoppingToken.IsCancellationRequested)
