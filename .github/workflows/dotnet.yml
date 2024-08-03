@@ -24,5 +24,9 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    - name: Test on VolumeMasterServiceWeb
+      run: dotnet test ./VolumeMasterServiceWeb/VolumeMasterServiceWeb.csproj --no-build --verbosity normal
+    - name: Test on VolumeMasterDWeb
+      run: dotnet test ./VolumeMasterDWeb/VolumeMasterDWeb.csproj --no-build --verbosity normal
+    - name: Test on VolumeMasterCom
+      run: dotnet test ./VolumeMasterCom/VolumeMasterCom.csproj --no-build --verbosity normal
