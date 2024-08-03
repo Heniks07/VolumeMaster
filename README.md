@@ -18,10 +18,10 @@ preset.
 | Preset                          | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
 | LED matrix                      | <ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 |                                 | Multimedia                         |                                    | 
-| Play button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Previous button                 | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Next button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Stop button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
+| Play button                     | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
+| Previous button                 | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
+| Next button                     | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
+| Stop button                     | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
 |                                 | Android Remote                     |                                    |
 | Manual override                 | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
 | Play/Pause                      | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
@@ -34,6 +34,7 @@ I don't have a particular order in which I develop these features. I just work o
 developing. It also depends on whether I have time to continue building the hardware part. So please don't ask me for
 features I already want to do. I will complete everything given enough time. Should you need something now, try to
 implement it yourself and send a push request.
+
 
 ## Requirements
 
