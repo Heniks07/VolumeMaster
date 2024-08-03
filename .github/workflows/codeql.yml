@@ -69,7 +69,10 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '8.0.x'
-        
+
+    - name: Install MAUI workloads
+      run: dotnet workload install maui-android
+      
     - name: Install dependencies
       if: matrix.language == 'csharp'
       run: dotnet restore
