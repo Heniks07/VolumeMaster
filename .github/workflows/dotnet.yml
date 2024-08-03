@@ -1,11 +1,13 @@
 # .github/workflows/dotnet-projects.yml
 name: .NET Projects CI
 
-on:
+on:   
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
 
 jobs:
   build:
