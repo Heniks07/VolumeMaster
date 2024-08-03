@@ -8,6 +8,10 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
     {
         var volumeMasterCom = new VolumeMasterCom.VolumeMasterCom(logger);
         var audioApi = new AudioApi();
+        audioApi.Device.AudioSessionManager2!.OnSessionCreated += (_, _) =>
+        {
+            ChangeEveryVolume(volumeMasterCom.GetVolume().Volume, volumeMasterCom.Config, audioApi);
+        };
 
         //volumeMasterCom.VolumeChanged += VmcOnVolumeChanged;
         // volumeMasterCom.RequestVolume();
@@ -40,6 +44,7 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
             {
                 lastConfigUpdate = DateTime.Now;
                 volumeMasterCom.ConfigHelper();
+                
             }
 
             try
@@ -60,7 +65,8 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Error while changing volume");
+                if (exception is FormatException) continue;
+                logger?.LogError(exception, "Error while changing volume");
             }
         }
     }
@@ -68,6 +74,8 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, AudioApi audioApi)
     {
         if (indexesChanged is null)
+            return;
+        if(indexesChanged.Contains(-1))
             ChangeEveryVolume(volume, config, audioApi);
         else if (indexesChanged.Count > 0)
             ChangeSliderVolumes(indexesChanged, volume, config, audioApi);

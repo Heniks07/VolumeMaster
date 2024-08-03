@@ -6,6 +6,8 @@ namespace VolumeMasterCom;
 public partial class VolumeMasterCom
 {
     private readonly SerialPort? _port;
+    private readonly List<(int index, int volume, bool applied)> _sliderManualOverride = [];
+    private List<int>? _sliderIndexesChanged = [];
     private List<int> _volume = [];
 
     //public event EventHandler<VolumeChangedEventArgs>? VolumeChanged;
@@ -16,35 +18,19 @@ public partial class VolumeMasterCom
     public event EventHandler? Stop;
 
 
-    public (List<int>? SliderIndexesChanged, List<int> Volume) GetVolume()
+    public (List<int>? SliderIndexesChanged, List<int> Volume, List<int> ActualVolume, List<bool> OverrideActive)
+        GetVolume()
     {
-        if(_port is {IsOpen: false}) 
+        //Open the serial port if it is closed
+        if (_port is { IsOpen: false })
             _port.Open();
+
+        //try to read from the serial port
         try
         {
-            var receivedData = _port?.ReadLine();
-            if (receivedData is null)
-                return (_sliderIndexesChanged, _volume);
-
-            if (receivedData.Contains("VM")) return HandleCommands(receivedData);
-
-            //Split the received data into a list of integers
-            var newVolume = receivedData.Split('|').Select(int.Parse).ToList();
-
-            //_logger?.LogInformation("Received volume: " + string.Join(" | ", newVolume) + " at" + DateTimeOffset.Now.ToString("HH:mm:ss.fff"));
-
-            //if the volume list is empty, set it to the new volume
-            //Should only happen once
-            if (_volume.Count == 0)
-            {
-                _volume = newVolume;
-                return (null, newVolume);
-            }
-
-            //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
-            //Apply the new volume
-            _sliderIndexesChanged?.Clear();
-            CompareToOldVolume(newVolume, false);
+            //returns if the data wasn't valid or a button was pressed
+            if (HandleReceivedData(out var handleCommands))
+                return handleCommands;
         }
         catch (InvalidOperationException)
         {
@@ -52,15 +38,119 @@ public partial class VolumeMasterCom
             PrintLog(
                 $"Make sure the right serial port ({Config?.PortName}) is configured in the config file ({ConfigPath()}) and no other application is using the port.",
                 LogLevel.Info);
-        }catch (ArgumentOutOfRangeException e)
+        }
+        catch (ArgumentOutOfRangeException e)
         {
             _port?.Close();
+            PrintLog(e.StackTrace ?? e.Message, LogLevel.Error);
+        }
+        catch (Exception e)
+        {
             PrintLog(e.Message, LogLevel.Error);
         }
 
-        
+        //apply the manual overrides
+        var finalVolume = GetVolumeAfterManualOverride();
 
-        return (_sliderIndexesChanged, _volume);
+        var overrideActive = new List<bool>();
+        for (var i = 0; i < _volume.Count; i++)
+        {
+            overrideActive.Add(_sliderManualOverride.Any(x => x.index == i));
+        }
+
+        return (_sliderIndexesChanged, finalVolume, _volume, overrideActive);
+    }
+
+
+    private bool HandleReceivedData(
+        out (List<int>? SliderIndexesChanged, List<int> Volume, List<int> ActualVolume, List<bool> OverrideActive)
+            handleCommands)
+    {
+        var receivedData = _port?.ReadExisting().Split('\n');
+        var overrideActive = new List<bool>();
+        for (var i = 0; i < _volume.Count; i++)
+        {
+            overrideActive.Add(_sliderManualOverride.Any(x => x.index == i));
+        }
+
+        //Check if the received data is valid
+        if (receivedData is { Length: < 3 })
+        {
+            handleCommands = (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
+            return true;
+        }
+
+        var lastData = receivedData?[^2].Trim();
+
+        if (lastData != null && lastData.Contains("VM"))
+        {
+            handleCommands = HandleCommands(lastData);
+            return true;
+        }
+
+
+        //Split the received data into a list of integers
+        var newVolumeStrings = lastData?.Split('|');
+
+        //Check if the received data is valid
+        if (newVolumeStrings != null && newVolumeStrings.Any(x => x.Length != 4))
+        {
+            {
+                handleCommands = (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
+                return true;
+            }
+        }
+
+        if (newVolumeStrings != null)
+        {
+            var newVolume = newVolumeStrings.Select(int.Parse).ToList();
+
+            //_logger?.LogInformation("Received volume: " + string.Join(" | ", newVolume) + " at" + DateTimeOffset.Now.ToString("HH:mm:ss.fff"));
+
+            //if the volume list is empty, set it to the new volume
+            //Should only happen once
+            //var test = new List<int>(_volume);
+            if (_volume.Count == 0)
+            {
+                _sliderIndexesChanged?.Clear();
+                CompareToOldVolume(newVolume, changeAll: true, doSmooth: false);
+                handleCommands = (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
+                return false;
+            }
+
+            //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
+            //Apply the new volume
+            _sliderIndexesChanged?.Clear();
+            CompareToOldVolume(newVolume, doSmooth: Config?.DoSmooth ?? true);
+        }
+
+        handleCommands = (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
+        return false;
+    }
+
+    private List<int> GetVolumeAfterManualOverride()
+    {
+        var finalVolume = _volume.ToList();
+        foreach (var (index, volume, applied) in _sliderManualOverride.ToList())
+        {
+            if (!applied)
+            {
+                if (volume > _volume[index])
+                    _sliderIndexesChanged![index] = 1;
+                else
+                    _sliderIndexesChanged![index] = -1;
+            }
+
+            //set applied to true for the current manual override
+            while (_sliderManualOverride.Count(x => x.index == index) > 1)
+                _sliderManualOverride.RemoveAt(_sliderManualOverride.FindIndex(x => x.index == index));
+            _sliderManualOverride[_sliderManualOverride.FindIndex(x => x.index == index)] = (index, volume, true);
+
+
+            finalVolume[index] = volume;
+        }
+
+        return finalVolume;
     }
 
     private void PrintLog(string message, LogLevel logLevel)
@@ -112,44 +202,53 @@ public partial class VolumeMasterCom
         }
     }
 
-    private (List<int>? SliderIndexesChanged, List<int> Volume) HandleCommands(string receivedData)
+    private (List<int>? SliderIndexesChanged, List<int> Volume, List<int> ActualVolume, List<bool> OverrideActive)
+        HandleCommands(string receivedData)
     {
+        var overrideActive = new List<bool>();
+        for (var i = 0; i < _volume.Count; i++)
+        {
+            overrideActive.Add(_sliderManualOverride.Any(x => x.index == i));
+        }
+
         switch (receivedData.Trim())
         {
             case "VM.changePreset":
             {
-                if (Config == null) return (_sliderIndexesChanged, _volume);
+                if (Config == null)
+                    return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
 
                 Config.SelectedPreset++;
                 Config.SelectedPreset %= (ushort)Config.SliderApplicationPairsPresets.Count;
 
                 WriteConfig(ConfigPath());
 
-                return (Config.UpdateAfterPresetChange ? null : _sliderIndexesChanged, _volume);
+                return (Config.UpdateAfterPresetChange ? null : _sliderIndexesChanged, GetVolumeAfterManualOverride(),
+                    _volume, overrideActive);
             }
             case "VM.playPause":
             {
                 PlayPause?.Invoke(this, EventArgs.Empty);
-                return (_sliderIndexesChanged, _volume);
+                return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
             }
             case "VM.next":
             {
                 Next?.Invoke(this, EventArgs.Empty);
-                return (_sliderIndexesChanged, _volume);
+                return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
             }
             case "VM.previous":
             {
                 Previous?.Invoke(this, EventArgs.Empty);
-                return (_sliderIndexesChanged, _volume);
+                return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
             }
             case "VM.stop":
             {
                 Stop?.Invoke(this, EventArgs.Empty);
-                return (_sliderIndexesChanged, _volume);
+                return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
             }
             default:
             {
-                return (_sliderIndexesChanged, _volume);
+                return (_sliderIndexesChanged, GetVolumeAfterManualOverride(), _volume, overrideActive);
             }
         }
     }
@@ -160,38 +259,15 @@ public partial class VolumeMasterCom
         _port?.WriteLine("getVolume");
     }
 
+    public void AddManualOverride(int sliderIndex, int volume)
+    {
+        _sliderManualOverride.Add((sliderIndex, volume, false));
+    }
+
     private enum LogLevel
     {
         Info,
         Warning,
         Error
     }
-
-    /*private void portOnDataReceived(object sender, SerialDataReceivedEventArgs e)
-    {
-        var receivedData = ((SerialPort)sender).ReadLine();
-        //Split the received data into a list of integers
-        var newVolume = receivedData.Split('|').Select(int.Parse).ToList();
-
-        //if the volume list is empty, set it to the new volume
-        //Should only happen once
-        if (_volume.Count == 0)
-        {
-            _volume = newVolume;
-            VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { });
-            return;
-        }
-
-        //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
-        //Apply the new volume
-        _sliderIndexesChanged?.Clear();
-        CompareToOldVolume(newVolume);
-        VolumeChanged?.Invoke(this, new VolumeChangedEventArgs { });
-
-#if DEBUG
-        //Print the volume for debugging
-        Console.WriteLine("new volume: " + string.Join(" | ", _volume));
-#endif
-    }
-*/
 }

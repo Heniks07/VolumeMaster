@@ -6,12 +6,19 @@ namespace VolumeMasterCom;
 
 public partial class VolumeMasterCom
 {
+    private const int ConfigVersionNumber = 1;
     public Config? Config { get; private set; }
+
 
     public void ConfigHelper()
     {
         var configPath = ConfigPath();
         LoadConfig(configPath);
+
+        if (Config?.ConfigVersionNumber == ConfigVersionNumber) return;
+        Config ??= new Config();
+        Config.ConfigVersionNumber = ConfigVersionNumber;
+        WriteConfig(configPath);
     }
 
     private void LoadConfig(string configPath)
@@ -26,6 +33,10 @@ public partial class VolumeMasterCom
         }
     }
 
+    /// <summary>
+    /// Determines the path of the config file based on the OS
+    /// </summary>
+    /// <returns>Returns the path to the configuration file</returns>
     public string ConfigPath()
     {
         var s = "";
@@ -56,12 +67,16 @@ public partial class VolumeMasterCom
         if (!File.Exists(configPath))
         {
             Config = new Config();
+            Config.ConfigVersionNumber = ConfigVersionNumber;
             WriteConfig(configPath);
         }
         else
         {
-            var yaml = new DeserializerBuilder().Build();
-            Config = yaml.Deserialize<Config>(File.ReadAllText(configPath));
+            var yaml = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
+            var config = yaml.Deserialize<Config>(File.ReadAllText(configPath));
+            if (Config is not null && Config.Equals(config)) return;
+            Config = config;
+            PrintLog("Config updated sucesfully", LogLevel.Info);
         }
     }
 
@@ -85,23 +100,4 @@ public partial class VolumeMasterCom
         var yamlString = yaml.Serialize(Config);
         File.WriteAllText(configPath, yamlString);
     }
-}
-
-public class Config
-{
-    public string PortName { get; set; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "/dev/ttyACM0" : "COM3";
-    public int BaudRate { get; set; } = 9600;
-
-
-    //How much the volume can change per bit
-    [YamlMember(Description =
-        "Between 1 and, 1024")]
-    public ushort Smoothness { get; set; } = 1000;
-
-    public List<List<List<string>>> SliderApplicationPairsPresets { get; set; } =
-        [[["Firefox", "Chromium"], ["master"]], [["steam"], ["master"]]];
-
-    public ushort SelectedPreset { get; set; }
-
-    public bool UpdateAfterPresetChange { get; set; } = true;
 }
