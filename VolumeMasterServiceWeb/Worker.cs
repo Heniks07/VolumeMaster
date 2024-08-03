@@ -2,7 +2,7 @@ using VolumeMasterCom;
 
 namespace VolumeMasterServiceWeb;
 
-public class Worker : BackgroundService
+public partial class Worker : BackgroundService
 {
     private readonly ILogger<Worker>? _logger;
     private readonly int _timeout;
@@ -34,46 +34,11 @@ public class Worker : BackgroundService
         VolumeMasterCom.Stop += (_, _) => MultiMediaApi.Stop();
 
         var lastConfigUpdate = DateTime.MinValue;
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            if ((DateTime.Now - lastConfigUpdate).TotalMilliseconds > 10000)
-            {
-                lastConfigUpdate = DateTime.Now;
-                VolumeMasterCom.ConfigHelper();
-            }
 
-            try
-            {
-                Thread.Sleep(_timeout);
-                var changes = VolumeMasterCom.GetVolume();
-                var indexesChanged = changes.SliderIndexesChanged;
-                var volume = changes.Volume;
-                var actualVolume = changes.ActualVolume;
-                var overrideActive = changes.OverrideActive;
-
-                LastVolume.Clear();
-                LastVolume.AddRange(volume);
-                LastActualVolume.Clear();
-                LastActualVolume.AddRange(actualVolume);
-                LastOverrideActive.Clear();
-                LastOverrideActive.AddRange(overrideActive);
-
-
-                var config = VolumeMasterCom.Config;
-
-                ChangeVolume(indexesChanged, volume, config, AudioApi, actualVolume, overrideActive);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                await Task.Delay(1000, stoppingToken);
-                _logger?.LogWarning("Please reconnect the Arduino");
-            }
-            catch (Exception? exception)
-            {
-                _logger?.LogError(exception, "Error while changing volume");
-            }
-        }
+        //loop that runs as long as the service is running
+        await Loop(stoppingToken, lastConfigUpdate);
     }
+
 
     private void ChangeVolume(List<int>? indexesChanged, List<int> volume, Config? config, AudioApi audioApi,
         List<int>? actualVolume, List<bool>? overrideActive)
@@ -133,7 +98,8 @@ public class Worker : BackgroundService
             {
                 //map value from 0-1023 to 0-100
                 var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
-                AudioApi.SetVolume(applicationName, newVolume);
+                AudioApi.SetVolume(applicationName, newVolume,
+                    config?.SliderApplicationPairsPresets[config.SelectedPreset]);
 #if DEBUG
                 _logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif
@@ -160,7 +126,8 @@ public class Worker : BackgroundService
                 {
                     //map value from 0-1023 to 0-100
                     var newVolume = (float)Math.Round((double)volume[i] / 1023, 2);
-                    audioApi.SetVolume(applicationName, newVolume);
+                    audioApi.SetVolume(applicationName, newVolume,
+                        config.SliderApplicationPairsPresets[config.SelectedPreset]);
 #if DEBUG
                     _logger?.LogInformation($"Set volume of {applicationName} to {newVolume}");
 #endif

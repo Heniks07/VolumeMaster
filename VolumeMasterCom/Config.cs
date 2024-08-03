@@ -52,6 +52,22 @@ public class Config
                SelectedPreset == config.SelectedPreset && UpdateAfterPresetChange == config.UpdateAfterPresetChange;
     }
 
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+        hashCode.Add(ConfigVersionNumber);
+        hashCode.Add(PortName);
+        hashCode.Add(BaudRate);
+        hashCode.Add(SliderCount);
+        hashCode.Add(Smoothness);
+        hashCode.Add(DoSmooth);
+        hashCode.Add(DecreaseBeforeIncreaseTimeout);
+        hashCode.Add(SliderApplicationPairsPresets);
+        hashCode.Add(SelectedPreset);
+        hashCode.Add(UpdateAfterPresetChange);
+        return hashCode.ToHashCode();
+    }
+
     private static bool PresetsAreEqual(List<List<List<string>>> preset1, List<List<List<string>>> preset2)
     {
         var preset1String = JsonConvert.SerializeObject(preset1);
