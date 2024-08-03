@@ -1,13 +1,11 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+# .github/workflows/dotnet-projects.yml
+name: .NET Projects CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -15,18 +13,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test on VolumeMasterServiceWeb
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies for VolumeMasterServiceWeb
+      run: dotnet restore ./VolumeMasterServiceWeb/VolumeMasterServiceWeb.csproj
+
+    - name: Restore dependencies for VolumeMasterDWeb
+      run: dotnet restore ./VolumeMasterDWeb/VolumeMasterDWeb.csproj
+
+    - name: Restore dependencies for VolumeMasterCom
+      run: dotnet restore ./VolumeMasterCom/VolumeMasterCom.csproj
+
+    - name: Build VolumeMasterServiceWeb
+      run: dotnet build ./VolumeMasterServiceWeb/VolumeMasterServiceWeb.csproj --no-restore
+
+    - name: Build VolumeMasterDWeb
+      run: dotnet build ./VolumeMasterDWeb/VolumeMasterDWeb.csproj --no-restore
+
+    - name: Build VolumeMasterCom
+      run: dotnet build ./VolumeMasterCom/VolumeMasterCom.csproj --no-restore
+
+    - name: Test VolumeMasterServiceWeb
       run: dotnet test ./VolumeMasterServiceWeb/VolumeMasterServiceWeb.csproj --no-build --verbosity normal
-    - name: Test on VolumeMasterDWeb
+
+    - name: Test VolumeMasterDWeb
       run: dotnet test ./VolumeMasterDWeb/VolumeMasterDWeb.csproj --no-build --verbosity normal
-    - name: Test on VolumeMasterCom
+
+    - name: Test VolumeMasterCom
       run: dotnet test ./VolumeMasterCom/VolumeMasterCom.csproj --no-build --verbosity normal
