@@ -43,17 +43,22 @@ void loop() {
 
   if (changePreset.isPressed()) {
     Serial.println("VM.changePreset");
+    Serial.println("VM.changePreset");
   }
   if(playPause.isPressed()){
+    Serial.println("VM.playPause");
     Serial.println("VM.playPause");
   }
   if(next.isPressed()){
     Serial.println("VM.next");
+    Serial.println("VM.next");
   }
   if(previous.isPressed()){
     Serial.println("VM.previous");
+    Serial.println("VM.previous");
   }
   if(stop.isPressed()){
+    Serial.println("VM.stop");
     Serial.println("VM.stop");
   }
 
