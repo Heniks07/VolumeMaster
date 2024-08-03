@@ -11,10 +11,10 @@ VolumeMaster can change the volume level of single applications or whole devices
 | Preset                          | <ul><li>[x] </li></ul>             | <ul><li>[x] </li></ul>             |
 | LED matrix                      | <ul><li>[ ] coming soon </li></ul> | <ul><li>[ ] coming soon </li></ul> |
 |                                 | Multimedia                         |                                    | 
-| Play button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Previous button                 | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Next button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
-| Stop button                     | <ul><li>[ ] coming soon </li></ul> | <ul><li>[x] </li></ul>             |
+| Play button                     | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul>             |
+| Previous button                 | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul>             |
+| Next button                     | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul>             |
+| Stop button                     | <ul><li>[x] </li></ul> | <ul><li>[x] </li></ul>             |
 
 ## Requirements
 ### Linux
