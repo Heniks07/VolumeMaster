@@ -19,7 +19,7 @@ public partial class VolumeMasterCom
 
 
     public (List<int>? SliderIndexesChanged, List<int> Volume, List<int> ActualVolume, List<bool> OverrideActive)
-        GetVolume()
+        GetVolume(bool changeAll = false)
     {
         //Open the serial port if it is closed
         if (_port is { IsOpen: false })
@@ -29,7 +29,7 @@ public partial class VolumeMasterCom
         try
         {
             //returns if the data wasn't valid or a button was pressed
-            if (HandleReceivedData(out var handleCommands))
+            if (HandleReceivedData(changeAll, out var handleCommands))
                 return handleCommands;
         }
         catch (InvalidOperationException)
@@ -62,7 +62,7 @@ public partial class VolumeMasterCom
     }
 
 
-    private bool HandleReceivedData(
+    private bool HandleReceivedData(bool changeAll,
         out (List<int>? SliderIndexesChanged, List<int> Volume, List<int> ActualVolume, List<bool> OverrideActive)
             handleCommands)
     {
@@ -82,9 +82,9 @@ public partial class VolumeMasterCom
 
         var lastData = receivedData?[^2].Trim();
 
-        if (lastData != null && lastData.Contains("VM"))
+        if (receivedData != null && receivedData.Any(x => x.Contains("VM")))
         {
-            handleCommands = HandleCommands(lastData);
+            handleCommands = HandleCommands(receivedData.FirstOrDefault(x => x.Contains("VM"))?.Trim() ?? "");
             return true;
         }
 
@@ -121,7 +121,7 @@ public partial class VolumeMasterCom
             //Smooth the volume to prevent sudden changes potentially caused by bad connections or noise
             //Apply the new volume
             _sliderIndexesChanged?.Clear();
-            CompareToOldVolume(newVolume, doSmooth: Config?.DoSmooth ?? true);
+            CompareToOldVolume(newVolume, doSmooth: Config?.DoSmooth ?? true, changeAll: changeAll);
         }
 
         handleCommands = (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
@@ -222,9 +222,11 @@ public partial class VolumeMasterCom
                 Config.SelectedPreset %= (ushort)Config.SliderApplicationPairsPresets.Count;
 
                 WriteConfig(ConfigPath());
+                if (!Config.UpdateAfterPresetChange)
+                    return (null, GetVolumeAfterManualOverride(), _volume, overrideActive);
 
-                return (Config.UpdateAfterPresetChange ? null : _sliderIndexesChanged, GetVolumeAfterManualOverride(),
-                    _volume, overrideActive);
+                Thread.Sleep(100);
+                return GetVolume(true);
             }
             case "VM.playPause":
             {

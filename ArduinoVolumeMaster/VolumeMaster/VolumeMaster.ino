@@ -1,13 +1,13 @@
 #include <ezButton.h>
-const int numberPins = 4;
-const int pins[numberPins] = { A0, A1, A2, A3};
+const int numberPins = 5;
+const int pins[numberPins] = { A0, A1, A2, A3, A4};
 int lastVolume[numberPins] = {};
 bool initialized;
-ezButton changePreset(2);
-ezButton playPause(3);
+ezButton changePreset(10);
+ezButton playPause(6);
 ezButton next(4);
-ezButton previous(5);
-ezButton stop(6);
+ezButton previous(8);
+ezButton stop(2);
 
 
 

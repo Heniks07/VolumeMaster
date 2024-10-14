@@ -115,10 +115,11 @@ public partial class VolumeMasterCom
             RemoveManualOverride();
         }
 
-        DecreaseBeforeIncrease(volume, changeAll, overrides);
+        if (!changeAll)
+            DecreaseBeforeIncrease(volume, overrides);
     }
 
-    private void DecreaseBeforeIncrease(List<int> newVolume, bool changeAll,
+    private void DecreaseBeforeIncrease(List<int> newVolume,
         List<(int index, int volume, bool applied)> overrides)
     {
         if (_sliderIndexesChanged is null)
